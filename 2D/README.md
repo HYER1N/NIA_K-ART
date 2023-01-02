@@ -46,4 +46,4 @@ python –W ignore test.py –a se_resnet50 –data ./{데이터셋 path}/
 - gpu-id 0 : 학습 환경에 맞는 GPU를 설정합니다.
 
 ##### References
-[Imagenet:](https://ieeexplore.ieee.org/document/5206848) Deep Learning on images for 2D Classification
+- [Imagenet:](https://ieeexplore.ieee.org/document/5206848) Deep Learning on images for 2D Classification
