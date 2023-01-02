@@ -7,4 +7,6 @@ Code for K-art 2d dataset image preprocessing.
 ```
 pip install opencv-python
 pip install pytest-shutil
+pip install numpy
+pip install pandas
 ```
