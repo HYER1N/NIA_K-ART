@@ -1,9 +1,9 @@
 # K-art dataset preprocessing 
 
-## Introduction
+### Introduction
 Code for K-art 2d dataset image preprocessing.
 
-## Download
+### Download
 ```
 pip install opencv-python
 pip install pytest-shutil
