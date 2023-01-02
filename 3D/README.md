@@ -1,4 +1,4 @@
-# NIA_K-Art_3D
+# NIA K-ART 3D Image Classification
 
 ## Dataset
 
