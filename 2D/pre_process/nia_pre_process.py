@@ -1,371 +1,117 @@
 import os
-import pandas as pd
-import numpy as np
-import cv2
-import csv
 import shutil
+import cv2
+import pandas as pd
 
+# Define paths
+base_path = os.getcwd()
+current_path = os.path.join(base_path, 'dataset')
+join_path = os.path.join(base_path, 'nia_join')
+resize_path = os.path.join(base_path, 'nia_resize')
+split_path = os.path.join(base_path, 'nia_split')
+class_folders = ['건축', '공예', '서예', '악기', '조각', '회화']
+class_paths = [os.path.join(split_path, c) for c in class_folders]
+class_split_path = os.path.join(base_path, 'nia_split_class')
 
-
-# Unzip all files
-
-
-#! Creating a folder
-current_path = os.path.join(os.getcwd(),'dataset') # Orisinal datasets locaion
-join_path = os.path.join(os.getcwd(),'nia_join') # Extract jpg files only
-resize_path =  os.path.join(os.getcwd(),'nia_resize') # join_path files -> resize
-
-split_path = os.path.join(os.getcwd(),'nia_split') # Class separation
-clas_a = os.path.join(os.getcwd(),'nia_split/건축')
-clas_b = os.path.join(os.getcwd(),'nia_split/공예')
-clas_c = os.path.join(os.getcwd(),'nia_split/서예')
-clas_d = os.path.join(os.getcwd(),'nia_split/악기')
-clas_e = os.path.join(os.getcwd(),'nia_split/조각')
-clas_f = os.path.join(os.getcwd(),'nia_split/회화')
- 
-class_path = os.path.join(os.getcwd(), 'nia_split_class') # Dataset split (8:1:1)
-
-pass_list = [join_path, resize_path, split_path, 
-             clas_a, clas_b, clas_c, clas_d, clas_e, clas_f, class_path]
-
-for path in pass_list:
+# Create directories
+paths_to_create = [join_path, resize_path, split_path, class_split_path] + class_paths
+for path in paths_to_create:
     os.makedirs(path, exist_ok=True)
 
+# Extract and move images
+def move_images(src_path, join_path, conditions):
+    for root, _, files in os.walk(src_path):
+        files.sort()
+        for file in files:
+            if all(cond(file) for cond in conditions):
+                shutil.move(os.path.join(root, file), join_path)
+                
+conditions1 = [
+    lambda f: len(f.split('_')[-1]) == 5,
+    lambda f: f.split('.')[-1] != 'xlsx',
+    lambda f: f[0] != '.',
+    lambda f: f[0] != 'C'
+]
 
-#! Extract GOODGATE, WEPCO images 
-for root, dirs, files in os.walk(current_path):
-    dirs.sort()
-    files.sort()
-    for file in files:
-        if len(file.split('_')[-1])== 5 and file.split('.')[-1] != 'xlsx' and file[0] != '.' and file[0] != 'C':  
-            path = os.path.join(root, file) 
-            shutil.move(path, join_path)
-            
+conditions2 = [
+    lambda f: len(f.split('-')[-1]) in [5, 6],
+    lambda f: f.split('.')[-1] not in ['xlsx', 'xlsb'],
+    lambda f: f[0] != '.',
+    lambda f: f[0] != 'C'
+]
+
+move_images(current_path, join_path, conditions1)
 print('1 img done')
-    
-    
-#! Extract 2DIMAGE images 
-for root, dirs, files in os.walk(current_path):
-    dirs.sort()
-    files.sort()
-    for file in files:
-        if len(file.split('-')[-1])== 5 and file.split('.')[-1] != 'xlsx' and file.split('.')[-1] != 'xlsb' and file[0] != '.' and file[0] != 'C': 
-            path = os.path.join(root, file)
-            shutil.move(path, join_path)
-        
-        elif len(file.split('-')[-1])== 6 and file.split('.')[-1] != 'xlsx' and file.split('.')[-1] != 'xlsb' and file[0] != '.' and file[0] != 'C': 
-            path = os.path.join(root, file)
-            shutil.move(path, join_path)
-           
+move_images(current_path, join_path, conditions2)
 print('2 img done')
 
-
-#! Images resize
-for root, dirs, files in os.walk(join_path):
-    files.sort()
-    for file in files:   
-        if len(file.split('_')[-1])== 5 and file.split('.')[-1] != 'xlsx' and file[0] != '.' and len(file.split('-')[-1]) != 6:   
+# Resize images
+def resize_images(src_path, dst_path, size=(800, 600)):
+    for root, _, files in os.walk(src_path):
+        files.sort()
+        for file in files:
             path = os.path.join(root, file)
             img = cv2.imread(path, cv2.IMREAD_COLOR)
-            try:
-                imgfile = cv2.resize(img, (800,600), interpolation=cv2.INTER_AREA)
-                name = os.path.basename(path)
-                paths = os.path.join(resize_path, name)
-                cv2.imwrite(paths, imgfile)
-            except:
-                pass
-            
-        if len(file.split('-')[-1])== 5 and file.split('.')[-1] != 'xlsx' and file[0] != '.' and len(file.split('-')[-1]) != 6:   
-            path_ = os.path.join(root, file)
-            img_ = cv2.imread(path_, cv2.IMREAD_COLOR)
-            try:
-                imgfile_ = cv2.resize(img_, (800,600), interpolation=cv2.INTER_AREA)
-                name_ = os.path.basename(path_)
-                paths_ = os.path.join(resize_path, name_)
-                cv2.imwrite(paths_, imgfile_)
-            except:
-                pass
-            
-        
-        elif len(file.split('-')[-1])== 6 and file.split('.')[-1] != 'xlsx' and file[0] != '.':   
-            path_ = os.path.join(root, file)
-            img_ = cv2.imread(path_, cv2.IMREAD_COLOR)
-            try:
-                imgfile_ = cv2.resize(img_, (800,600), interpolation=cv2.INTER_AREA)
-                name_ = os.path.basename(path_)
-                paths_ = os.path.join(resize_path, name_)
-                cv2.imwrite(paths_, imgfile_)
-            except:
-                break
+            if img is not None:
+                resized_img = cv2.resize(img, size, interpolation=cv2.INTER_AREA)
+                cv2.imwrite(os.path.join(dst_path, file), resized_img)
+
+resize_images(join_path, resize_path)
 print('Resize done')
 
+# Extract labels from Excel
+def extract_labels_from_excel(src_path, filename, skiprows=None):
+    for root, _, files in os.walk(src_path):
+        files.sort()
+        if filename in files:
+            csv = pd.read_excel(os.path.join(root, filename), skiprows=skiprows)
+            return csv.to_dict()
 
-#! Extract GOODGATE label information from Excel
-for root, dirs, files in os.walk(current_path):
-    files.sort()
-    for file in files: 
-        if file.split('.')[-1] == 'xlsx' and file == 'goodgate.xlsx': 
-            csv = pd.read_excel(os.path.join(root,file))
-            csv_dict = csv.to_dict()
-            
-            try:
-                filename = csv_dict['파일명']
-                classname = csv_dict['중분류(분야)']
+goodgate_labels = extract_labels_from_excel(current_path, 'goodgate.xlsx')
+wepco_labels = extract_labels_from_excel(current_path, 'wepco.xlsx', skiprows=[0])
+image2d_labels = extract_labels_from_excel(current_path, '2dimg.xlsx', skiprows=[0])
+print('Excel extraction done')
 
-                filename_list = list(filename.values())[1:]
-                classname_list = list(classname.values())[1:]
-                
-            except:
-                pass
+# Move images to class folders
+def move_to_class_folders(src_path, dst_path, labels):
+    for root, _, files in os.walk(src_path):
+        files.sort()
+        for file in files:
+            filename, classname = labels['파일명'], labels['중분류(분야)']
+            for f, c in zip(filename.values(), classname.values()):
+                if f == file.split('_')[0] or f == file.split('-')[0]:
+                    shutil.move(os.path.join(root, file), os.path.join(dst_path, c, file))
 
-print('gg excel done')
-
-#! Extract WEPCO label information from Excel
-for root, dirs, files in os.walk(current_path):
-    files.sort()
-    for file in files: 
-        if file.split('.')[-1] == 'xlsx' and file == 'wepco.xlsx': 
-            csv = pd.read_excel(os.path.join(root,file), skiprows=[0])
-            csv_dict = csv.to_dict()
-            
-            try:
-                filename_b = csv_dict['파일명']
-                classname_b = csv_dict['중분류(분야)']
-
-                filename_list_b = list(filename_b.values())[1:]
-                classname_list_b = list(classname_b.values())[1:]
-                
-            except:
-                pass
-
-print('we excel done')
-
-
-#! Divide GOODGATE Class
-for root, dirs, files in os.walk(resize_path):
-    files.sort()   
-    for file in files:
-        for (clas,file_) in zip(classname_list,filename_list):
-            if file_ == file[:-6] :
-                temp = len(file)
-                path = os.path.join(root, file[:temp-4]+file[-4:])
-                spl_path = os.path.join(split_path,clas,file)                    
-                shutil.move(path, spl_path)
-print('gg split done')
-
-
-#! Divide WEPCO Class
-for root, dirs, files in os.walk(resize_path):
-    files.sort()   
-    for file in files:
-        for (clas,file_) in zip(classname_list_b,filename_list_b):
-            if file_ == file[:-6] :
-                temp = len(file)
-                path = os.path.join(root, file[:temp-4]+file[-4:])
-                spl_path = os.path.join(split_path,clas,file)                    
-                shutil.move(path, spl_path)
-print('we split done')
-
-
-#! Extract 2DIMAGE label information from Excel
-for root, dirs, files in os.walk(current_path):
-    files.sort()
-    for file in files:     
-        if file.split('.')[-1] == 'xlsx' and file == '2dimg.xlsx':
-            csv = pd.read_excel(os.path.join(root,file), skiprows=[0])
-            csv_dict = csv.to_dict()
-            
-            try: 
-                filename_3 = csv_dict['신) 이미지 파일명']
-                classname_3 = csv_dict['중분류']
-
-                filename_lists = list(filename_3.values())[0:]
-                classname_lists = list(classname_3.values())[0:]  
-                
-            except :
-                pass
-print('2d excel done')
-                
-
-#! Divide 2DIMAGE Class
-for root, dirs, files in os.walk(resize_path):
-    files.sort()   
-    for file in files:
-        for (clas2,file_2) in zip(classname_lists, filename_lists): 
-            if file_2 == file[:-4] :
-                temp = len(file)
-                path = os.path.join(root, file[:temp-6]+file[-6:])
-                spl_path = os.path.join(split_path,clas2,file)                    
-                shutil.move(path, spl_path)
-
-print('2d split done')
-
-
-#! Class split 8:1:1
-train_a = os.path.join(os.getcwd(), 'nia_split_class/train/건축')
-train_b = os.path.join(os.getcwd(), 'nia_split_class/train/공예')
-train_c = os.path.join(os.getcwd(), 'nia_split_class/train/서예')
-train_d = os.path.join(os.getcwd(), 'nia_split_class/train/악기')
-train_e = os.path.join(os.getcwd(), 'nia_split_class/train/조각')
-train_f = os.path.join(os.getcwd(), 'nia_split_class/train/회화')
-
-test_a = os.path.join(os.getcwd(), 'nia_split_class/test/건축')
-test_b = os.path.join(os.getcwd(), 'nia_split_class/test/공예')
-test_c = os.path.join(os.getcwd(), 'nia_split_class/test/서예')
-test_d = os.path.join(os.getcwd(), 'nia_split_class/test/악기')
-test_e = os.path.join(os.getcwd(), 'nia_split_class/test/조각')
-test_f = os.path.join(os.getcwd(), 'nia_split_class/test/회화')
-
-val_a = os.path.join(os.getcwd(), 'nia_split_class/val/건축')
-val_b = os.path.join(os.getcwd(), 'nia_split_class/val/공예')
-val_c = os.path.join(os.getcwd(), 'nia_split_class/val/서예')
-val_d = os.path.join(os.getcwd(), 'nia_split_class/val/악기')
-val_e = os.path.join(os.getcwd(), 'nia_split_class/val/조각')
-val_f = os.path.join(os.getcwd(), 'nia_split_class/val/회화')
-
-path_list = [train_a, train_b, train_c, train_d, train_e, train_f, 
-             test_a, test_b, test_c, test_d, test_e, test_f, 
-             val_a, val_b, val_c, val_d, val_e, val_f]
-
-
-for path_af in path_list:
-    os.makedirs(path_af, exist_ok=True)
-    
-print('2_Folder done')
-
-
-for root, dirs, files in os.walk(clas_a):
-    files.sort()
-    
-    mid = int(len(files)*0.8)
-    last = int(len(files)*0.1)
-    
-    for file in files[:mid]:
-        a_spl_path = os.path.join(clas_a, file)
-        a_new_pa = os.path.join(train_a, file)
-        shutil.move(a_spl_path, a_new_pa)
-    
-    for file in files[mid:-last]:
-        a_spl_path = os.path.join(clas_a, file)
-        a_new_pa2 = os.path.join(test_a, file)
-        shutil.move(a_spl_path, a_new_pa2)
-        
-    for file in files[-last:]:
-        a_spl_path3 = os.path.join(clas_a, file)
-        a_new_pa3 = os.path.join(val_a, file)
-        shutil.move(a_spl_path3, a_new_pa3)
-
-
-    
-for root, dirs, files in os.walk(clas_b):
-    files.sort()
-    
-    mid = int(len(files)*0.8)
-    last = int(len(files)*0.1)
-    
-    for file in files[:mid]:
-        b_spl_path = os.path.join(clas_b, file)
-        b_new_pa = os.path.join(train_b, file)
-        shutil.move(b_spl_path, b_new_pa)
-    
-    for file in files[mid:-last]:
-        b_spl_path2 = os.path.join(clas_b, file)
-        b_new_pa2 = os.path.join(test_b, file)
-        shutil.move(b_spl_path2, b_new_pa2)
-        
-    for file in files[-last:]:
-        b_spl_path3 = os.path.join(clas_b, file)
-        b_new_pa3 = os.path.join(val_b, file)
-        shutil.move(b_spl_path3, b_new_pa3)
-
-        
-
-for root, dirs, files in os.walk(clas_c):
-    files.sort()
-    
-    mid = int(len(files)*0.8)
-    last = int(len(files)*0.1)
-    
-    for file in files[:mid]:
-        c_spl_path = os.path.join(clas_c, file)
-        c_new_pa = os.path.join(train_c, file)
-        shutil.move(c_spl_path, c_new_pa)
-    
-    for file in files[mid:-last]:
-        c_spl_path2 = os.path.join(clas_c, file)
-        c_new_pa2 = os.path.join(test_c, file)
-        shutil.move(c_spl_path2, c_new_pa2)
-        
-    for file in files[-last:]:
-        c_spl_path3 = os.path.join(clas_c, file)
-        c_new_pa3 = os.path.join(val_c, file)
-        shutil.move(c_spl_path3, c_new_pa3)
-        
-        
-for root, dirs, files in os.walk(clas_d):
-    files.sort()
-    
-    mid = int(len(files)*0.8)
-    last = int(len(files)*0.1)
-    
-    for file in files[:mid]:
-        d_spl_path = os.path.join(clas_d, file)
-        d_new_pa = os.path.join(train_d, file)
-        shutil.move(d_spl_path, d_new_pa)
-    
-    for file in files[mid:-last]:
-        d_spl_path2 = os.path.join(clas_d, file)
-        d_new_pa2 = os.path.join(test_d, file)
-        shutil.move(d_spl_path2, d_new_pa2)
-        
-    for file in files[-last:]:
-        d_spl_path3 = os.path.join(clas_d, file)
-        d_new_pa3 = os.path.join(val_d, file)
-        shutil.move(d_spl_path3, d_new_pa3)
-        
-        
-for root, dirs, files in os.walk(clas_e):
-    files.sort()
-    
-    mid = int(len(files)*0.8)
-    last = int(len(files)*0.1)
-    
-    for file in files[:mid]:
-        e_spl_path = os.path.join(clas_e, file)
-        e_new_pa = os.path.join(train_e, file)
-        shutil.move(e_spl_path, e_new_pa)
-    
-    for file in files[mid:-last]:
-        e_spl_path2 = os.path.join(clas_e, file)
-        e_new_pa2 = os.path.join(test_e, file)
-        shutil.move(e_spl_path2, e_new_pa2)
-        
-    for file in files[-last:]:
-        e_spl_path3 = os.path.join(clas_e, file)
-        e_new_pa3 = os.path.join(val_e, file)
-        shutil.move(e_spl_path3, e_new_pa3)
-        
-        
-for root, dirs, files in os.walk(clas_f):
-    files.sort()
-    
-    mid = int(len(files)*0.8)
-    last = int(len(files)*0.1)
-    
-    for file in files[:mid]:
-        f_spl_path = os.path.join(clas_f, file)
-        f_new_pa = os.path.join(train_f, file)
-        shutil.move(f_spl_path, f_new_pa)
-    
-    for file in files[mid:-last]:
-        f_spl_path2 = os.path.join(clas_f, file)
-        f_new_pa2 = os.path.join(test_f, file)
-        shutil.move(f_spl_path2, f_new_pa2)
-        
-    for file in files[-last:]:
-        f_spl_path3 = os.path.join(clas_f, file)
-        f_new_pa3 = os.path.join(val_f, file)
-        shutil.move(f_spl_path3, f_new_pa3)
-
+move_to_class_folders(resize_path, split_path, goodgate_labels)
+move_to_class_folders(resize_path, split_path, wepco_labels)
+move_to_class_folders(resize_path, split_path, image2d_labels)
 print('Class split done')
+
+# Split data into train, test, and validation sets
+def split_data(src_path, dst_path, split_ratio=(0.8, 0.1, 0.1)):
+    train_path = os.path.join(dst_path, 'train')
+    test_path = os.path.join(dst_path, 'test')
+    val_path = os.path.join(dst_path, 'val')
+    for path in [train_path, test_path, val_path]:
+        for c in class_folders:
+            os.makedirs(os.path.join(path, c), exist_ok=True)
+    
+    for class_folder in class_folders:
+        class_src_path = os.path.join(src_path, class_folder)
+        files = sorted(os.listdir(class_src_path))
+        mid = int(len(files) * split_ratio[0])
+        last = int(len(files) * split_ratio[1])
+        
+        for i, file in enumerate(files):
+            if i < mid:
+                shutil.move(os.path.join(class_src_path, file), os.path.join(train_path, class_folder, file))
+            elif i < mid + last:
+                shutil.move(os.path.join(class_src_path, file), os.path.join(test_path, class_folder, file))
+            else:
+                shutil.move(os.path.join(class_src_path, file), os.path.join(val_path, class_folder, file))
+
+split_data(split_path, class_split_path)
+print('Data split done')
+print('All done')
+
 print('All done')
